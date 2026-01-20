@@ -3,7 +3,7 @@ import {connectToDB} from "../../../lib/db";
 import Video from "../../../models/Video";
 import { getServerSession } from "next-auth";
 import { authOptions } from "../../../lib/auth";
-import IVideo from "../../../models/Video";
+import {IVideo}  from "..//../../models/Video";
 import { NextRequest } from "next/server";
 
 
@@ -39,9 +39,25 @@ export async function POST(request: NextRequest) {
    }
    await connectToDB();
 
-   await body: IVideo  = await req.json();
-    
+   const body: IVideo = await request.json();
+
+   if (!body.title || !body.videoUrl || !body.thumbnailUrl || !body.description) {
+    return NextResponse.json({error: "Missing required fields"}, {status: 400});  
+   }
+    const videoData = {
+      ...body,
+      controls: body?.controls ?? true,
+      transformation: {
+        height:1920,
+        width:1080,
+        quality: body.transformation?.quality ?? "100",
+      },
+    };
+
+    const newVideo = await Video.create(videoData);
+    return NextResponse.json(newVideo, {status: 201});
   } catch (error) {
+    return NextResponse.json({error: "failed to upload video"}, {status: 500});
     
   }
 }
